@@ -139,4 +139,37 @@ public class PrestamoService {
                 "Préstamo registrado: " + laptop.getCodigo() + " asignada a " + codigoLimpio
         );
     }
+
+    public ResultadoOperacion registrarDevolucion(String codigoLaptop, String codigoEstudiante) {
+        if (codigoLaptop == null || codigoLaptop.trim().isEmpty()) {
+            return ResultadoOperacion.error("Seleccione una laptop del inventario para devolver");
+        }
+
+        Laptop laptop = buscarLaptop(codigoLaptop);
+        if (laptop == null) {
+            return ResultadoOperacion.error("Laptop no encontrada en el inventario");
+        }
+
+        if (laptop.estaDisponible()) {
+            return ResultadoOperacion.error("La laptop no tiene un préstamo activo");
+        }
+
+        String codigoLimpio = codigoEstudiante == null ? "" : codigoEstudiante.trim();
+        if (codigoLimpio.isEmpty()) {
+            return ResultadoOperacion.error("Ingrese el código del estudiante para confirmar la devolución");
+        }
+
+        if (!esCodigoEstudianteValido(codigoLimpio)) {
+            return ResultadoOperacion.error("El código debe comenzar con U y tener 8 caracteres");
+        }
+
+        if (!codigoLimpio.equals(laptop.getCodigoEstudianteAsignado())) {
+            return ResultadoOperacion.error("El estudiante no corresponde al préstamo de esta laptop");
+        }
+
+        laptop.setEstado(EstadoLaptop.DISPONIBLE);
+        laptop.setCodigoEstudianteAsignado(null);
+
+        return ResultadoOperacion.ok("Devolución registrada correctamente");
+    }
 }
