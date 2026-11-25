@@ -89,4 +89,54 @@ public class PrestamoService {
         }
         return laptops.get(codigoLaptop.trim());
     }
+
+    public boolean tienePrestamoActivo(String codigoEstudiante) {
+        return buscarLaptopPorEstudiante(codigoEstudiante) != null;
+    }
+
+    public Laptop buscarLaptopPorEstudiante(String codigoEstudiante) {
+        if (codigoEstudiante == null) {
+            return null;
+        }
+        String codigoLimpio = codigoEstudiante.trim();
+        for (Laptop laptop : laptops.values()) {
+            if (!laptop.estaDisponible() && codigoLimpio.equals(laptop.getCodigoEstudianteAsignado())) {
+                return laptop;
+            }
+        }
+        return null;
+    }
+
+    public ResultadoOperacion registrarPrestamo(String nombreEstudiante, String codigoEstudiante, String codigoLaptop) {
+        ResultadoOperacion validacionEstudiante = registrarEstudiante(nombreEstudiante, codigoEstudiante);
+        if (!validacionEstudiante.isExitoso()) {
+            return validacionEstudiante;
+        }
+
+        if (codigoLaptop == null || codigoLaptop.trim().isEmpty()) {
+            return ResultadoOperacion.error("No hay laptops disponibles para préstamo");
+        }
+
+        Laptop laptop = buscarLaptop(codigoLaptop);
+        if (laptop == null) {
+            return ResultadoOperacion.error("Laptop no encontrada en el inventario");
+        }
+
+        if (!laptop.estaDisponible()) {
+            return ResultadoOperacion.error("La laptop ya está asignada a otro estudiante");
+        }
+
+        String codigoLimpio = codigoEstudiante.trim();
+
+        if (tienePrestamoActivo(codigoLimpio)) {
+            return ResultadoOperacion.error("El estudiante ya tiene un préstamo activo");
+        }
+
+        laptop.setEstado(EstadoLaptop.PRESTADA);
+        laptop.setCodigoEstudianteAsignado(codigoLimpio);
+
+        return ResultadoOperacion.ok(
+                "Préstamo registrado: " + laptop.getCodigo() + " asignada a " + codigoLimpio
+        );
+    }
 }
